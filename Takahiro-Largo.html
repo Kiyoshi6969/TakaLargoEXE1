@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Notepad</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #cce7ff;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: #e0f2ff;
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4da8da;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #007bb5;
+        }
+        #status {
+            margin-top: 10px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Cloud Notepad</h2>
+        <input type="text" id="filename" placeholder="Enter file name (e.g., notes.txt)">
+        <button onclick="loadFile()">Load File</button>
+        <button onclick="saveFile()">Save File</button>
+        <button onclick="clearText()">Clear Text</button>
+        <p id="status"></p>
+        <textarea id="editor"></textarea>
+    </div>
+    <script>
+        const GITHUB_USERNAME = "Kiyoshi6969";
+        const REPO_NAME = "TakaLargoEXE1";
+        const TOKEN = "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";
+        const BRANCH = "main";
+        
+        async function loadFile() {
+            const filename = document.getElementById('filename').value;
+            if (!filename) return alert('Please enter a file name!');
+            
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${filename}`;
+            const headers = { 'Authorization': `token ${TOKEN}` };
+            
+            try {
+                let response = await fetch(url, { headers });
+                if (!response.ok) throw new Error('File not found');
+                let data = await response.json();
+                document.getElementById('editor').value = atob(data.content);
+                document.getElementById('editor').setAttribute('data-sha', data.sha);
+                document.getElementById('status').innerText = 'File loaded successfully!';
+            } catch (error) {
+                document.getElementById('status').innerText = 'Error: ' + error.message;
+            }
+        }
+        
+        async function saveFile() {
+            const filename = document.getElementById('filename').value;
+            const content = document.getElementById('editor').value;
+            if (!filename || !content) return alert('Enter file name and content!');
+            
+            const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${filename}`;
+            const headers = {
+                'Authorization': `token ${TOKEN}`,
+                'Content-Type': 'application/json'
+            };
+            
+            const sha = document.getElementById('editor').getAttribute('data-sha');
+            
+            const body = JSON.stringify({
+                message: `Updating ${filename}`,
+                content: btoa(content),
+                branch: BRANCH,
+                sha: sha || undefined
+            });
+            
+            try {
+                let response = await fetch(url, { method: 'PUT', headers, body });
+                if (!response.ok) throw new Error('Failed to save file');
+                document.getElementById('status').innerText = 'File saved successfully!';
+            } catch (error) {
+                document.getElementById('status').innerText = 'Error: ' + error.message;
+            }
+        }
+        
+        function clearText() {
+            document.getElementById('editor').value = '';
+            document.getElementById('status').innerText = 'Textarea cleared!';
+        }
+    </script>
+</body>
+</html>
